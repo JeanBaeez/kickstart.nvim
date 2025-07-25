@@ -619,6 +619,11 @@ require('lazy').setup({
           --
           -- This may be unwanted, since they displace some of your code
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+            -- Enable inlay hints by default for rust-analyzer and other supported servers
+            if client.name == 'rust_analyzer' then
+              vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
+            end
+            
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
@@ -674,7 +679,74 @@ require('lazy').setup({
         clangd = {},
         gopls = {},
         pyright = {},
-        rust_analyzer = {},
+        rust_analyzer = {
+          settings = {
+            ['rust-analyzer'] = {
+              cargo = {
+                allFeatures = true,
+                loadOutDirsFromCheck = true,
+                buildScripts = {
+                  enable = true,
+                },
+              },
+              procMacro = {
+                enable = true,
+              },
+              diagnostics = {
+                enable = true,
+                experimental = {
+                  enable = true,
+                },
+              },
+              inlayHints = {
+                bindingModeHints = {
+                  enable = false,
+                },
+                chainingHints = {
+                  enable = true,
+                },
+                closingBraceHints = {
+                  enable = true,
+                  minLines = 25,
+                },
+                closureReturnTypeHints = {
+                  enable = "never",
+                },
+                lifetimeElisionHints = {
+                  enable = "never",
+                  useParameterNames = false,
+                },
+                maxLength = 25,
+                parameterHints = {
+                  enable = true,
+                },
+                reborrowHints = {
+                  enable = "never",
+                },
+                renderColons = true,
+                typeHints = {
+                  enable = true,
+                  hideClosureInitialization = false,
+                  hideNamedConstructor = false,
+                },
+              },
+              lens = {
+                enable = true,
+              },
+              checkOnSave = {
+                command = "clippy",
+              },
+            },
+          },
+        },
+        -- c#
+        omnisharp = {},
+        -- typescript
+        ts_ls = {},
+        -- javascript
+        eslint = {},
+        -- html
+        html = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -850,7 +922,8 @@ require('lazy').setup({
       completion = {
         -- By default, you may press `<c-space>` to show the documentation.
         -- Optionally, set `auto_show = true` to show the documentation after a delay.
-        documentation = { auto_show = false, auto_show_delay_ms = 500 },
+        documentation = { auto_show = true, auto_show_delay_ms = 500 },
+        menu = { auto_show = true },
       },
 
       sources = {
@@ -944,7 +1017,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'rust', 'toml', 'json', 'yaml', 'go', 'python', 'javascript', 'typescript' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
