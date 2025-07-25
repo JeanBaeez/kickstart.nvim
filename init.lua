@@ -345,8 +345,11 @@ require('lazy').setup({
       -- Document existing key chains
       spec = {
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]oggle' },
+        { '<leader>t', group = '[T]oggle/Terminal' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>g', group = '[G]it' },
+        { '<leader>b', group = '[B]uffer' }, 
+        { '<leader>c', group = '[C]onflict Resolution' },
       },
     },
   },
@@ -671,18 +674,100 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
+        -- Rust
+        rust_analyzer = {
+          settings = {
+            ['rust-analyzer'] = {
+              cargo = {
+                allFeatures = true,
+              },
+              checkOnSave = {
+                command = 'clippy',
+              },
+              procMacro = {
+                enable = true,
+              },
+            },
+          },
+        },
+
+        -- Go
+        gopls = {
+          settings = {
+            gopls = {
+              analyses = {
+                unusedparams = true,
+              },
+              staticcheck = true,
+              gofumpt = true,
+            },
+          },
+        },
+
+        -- C#
+        omnisharp = {
+          cmd = { 'omnisharp', '--languageserver', '--hostPID', tostring(vim.fn.getpid()) },
+          settings = {
+            FormattingOptions = {
+              EnableEditorConfigSupport = true,
+              OrganizeImports = nil,
+            },
+            MsBuild = {
+              LoadProjectsOnDemand = nil,
+            },
+            RoslynExtensionsOptions = {
+              EnableAnalyzersSupport = nil,
+              EnableImportCompletion = nil,
+            },
+          },
+        },
+
+        -- TypeScript/JavaScript/React
+        ts_ls = {
+          init_options = {
+            preferences = {
+              disableSuggestions = true,
+            },
+          },
+          settings = {
+            typescript = {
+              inlayHints = {
+                includeInlayParameterNameHints = 'all',
+                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+                includeInlayFunctionParameterTypeHints = true,
+                includeInlayVariableTypeHints = true,
+                includeInlayPropertyDeclarationTypeHints = true,
+                includeInlayFunctionLikeReturnTypeHints = true,
+                includeInlayEnumMemberValueHints = true,
+              },
+            },
+            javascript = {
+              inlayHints = {
+                includeInlayParameterNameHints = 'all',
+                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+                includeInlayFunctionParameterTypeHints = true,
+                includeInlayVariableTypeHints = true,
+                includeInlayPropertyDeclarationTypeHints = true,
+                includeInlayFunctionLikeReturnTypeHints = true,
+                includeInlayEnumMemberValueHints = true,
+              },
+            },
+          },
+        },
+
+        -- Python
+        pyright = {
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'workspace',
+                useLibraryCodeForTypes = true,
+                typeCheckingMode = 'basic',
+              },
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = { ... },
@@ -716,6 +801,14 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'black', -- Python formatter
+        'isort', -- Python import sorter
+        'prettier', -- JS/TS/JSON/YAML/Markdown formatter
+        'prettierd', -- Faster prettier
+        'rustfmt', -- Rust formatter
+        'gofumpt', -- Go formatter
+        'goimports', -- Go import organizer
+        'csharpier', -- C# formatter
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -768,11 +861,17 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        python = { 'isort', 'black' },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'prettierd', 'prettier', stop_after_first = true },
+        markdown = { 'prettierd', 'prettier', stop_after_first = true },
+        rust = { 'rustfmt' },
+        go = { 'gofumpt', 'goimports' },
+        cs = { 'csharpier' },
       },
     },
   },
@@ -881,20 +980,59 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    'rose-pine/neovim',
+    name = 'rose-pine',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
+      require('rose-pine').setup {
+        variant = 'main', -- auto, main, moon, dawn
+        dark_variant = 'main', -- main, moon, dawn
+        dim_inactive_windows = false,
+        extend_background_behind_borders = true,
         styles = {
-          comments = { italic = false }, -- Disable italics in comments
+          bold = true,
+          italic = false,
+          transparency = false,
         },
+        groups = {
+          border = 'muted',
+          link = 'iris',
+          panel = 'surface',
+          error = 'love',
+          hint = 'iris',
+          info = 'foam',
+          warn = 'gold',
+          git_add = 'foam',
+          git_change = 'rose',
+          git_delete = 'love',
+          git_dirty = 'rose',
+          git_ignore = 'muted',
+          git_merge = 'iris',
+          git_rename = 'pine',
+          git_stage = 'iris',
+          git_text = 'rose',
+          git_untracked = 'subtle',
+        },
+        highlight_groups = {
+          -- Comment = { fg = "foam" },
+          -- VertSplit = { fg = "muted", bg = "muted" },
+        },
+        before_highlight = function(group, highlight, palette)
+          -- Disable all undercurls
+          -- if highlight.undercurl then
+          --     highlight.undercurl = false
+          -- end
+          --
+          -- Change palette colour
+          -- if highlight.fg == palette.pine then
+          --     highlight.fg = palette.foam
+          -- end
+        end,
       }
 
       -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- Available variants: rose-pine, rose-pine-main, rose-pine-moon, rose-pine-dawn
+      vim.cmd.colorscheme 'rose-pine'
     end,
   },
 
@@ -944,7 +1082,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'rust', 'go', 'c_sharp', 'typescript', 'tsx', 'javascript', 'jsx', 'json', 'yaml', 'toml', 'python' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -973,12 +1111,528 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+
+  -- ====================
+  -- HIGH PRIORITY PLUGINS
+  -- ====================
+
+  { -- Better terminal management
+    'akinsho/toggleterm.nvim',
+    version = '*',
+    config = function()
+      require('toggleterm').setup {
+        size = function(term)
+          if term.direction == 'horizontal' then
+            return 15
+          elseif term.direction == 'vertical' then
+            return vim.o.columns * 0.4
+          end
+        end,
+        open_mapping = [[<C-\>]],
+        hide_numbers = true,
+        shade_terminals = true,
+        shading_factor = 2,
+        start_in_insert = true,
+        insert_mappings = true,
+        terminal_mappings = true,
+        persist_size = true,
+        direction = 'float',
+        close_on_exit = true,
+        shell = vim.o.shell,
+        float_opts = {
+          border = 'curved',
+          winblend = 0,
+          highlights = {
+            border = 'Normal',
+            background = 'Normal',
+          },
+        },
+      }
+
+      -- Custom terminal functions
+      local Terminal = require('toggleterm.terminal').Terminal
+      local lazygit = Terminal:new {
+        cmd = 'lazygit',
+        dir = 'git_dir',
+        direction = 'float',
+        float_opts = {
+          border = 'double',
+        },
+        on_open = function(term)
+          vim.cmd 'startinsert!'
+          vim.api.nvim_buf_set_keymap(term.bufnr, 'n', 'q', '<cmd>close<CR>', { noremap = true, silent = true })
+        end,
+        on_close = function(term)
+          vim.cmd 'startinsert!'
+        end,
+      }
+
+      function _lazygit_toggle()
+        lazygit:toggle()
+      end
+
+      -- Keymaps
+      vim.keymap.set('n', '<leader>gg', '<cmd>lua _lazygit_toggle()<CR>', { desc = 'Lazygit' })
+      vim.keymap.set('n', '<leader>tf', '<cmd>ToggleTerm direction=float<CR>', { desc = 'Float terminal' })
+      vim.keymap.set('n', '<leader>th', '<cmd>ToggleTerm direction=horizontal<CR>', { desc = 'Horizontal terminal' })
+      vim.keymap.set('n', '<leader>tv', '<cmd>ToggleTerm direction=vertical<CR>', { desc = 'Vertical terminal' })
+    end,
+  },
+
+  { -- Enhanced notifications
+    'rcarriga/nvim-notify',
+    config = function()
+      require('notify').setup {
+        background_colour = '#000000',
+        fps = 30,
+        icons = {
+          DEBUG = '',
+          ERROR = '',
+          INFO = '',
+          TRACE = '✎',
+          WARN = '',
+        },
+        level = 2,
+        minimum_width = 50,
+        render = 'default',
+        stages = 'fade_in_slide_out',
+        timeout = 5000,
+        top_down = true,
+      }
+      vim.notify = require 'notify'
+    end,
+  },
+
+  { -- Better buffer/tab management
+    'akinsho/bufferline.nvim',
+    version = '*',
+    dependencies = 'nvim-tree/nvim-web-devicons',
+    config = function()
+      require('bufferline').setup {
+        options = {
+          mode = 'buffers',
+          numbers = 'none',
+          close_command = 'bdelete! %d',
+          right_mouse_command = 'bdelete! %d',
+          left_mouse_command = 'buffer %d',
+          middle_mouse_command = nil,
+          indicator = {
+            icon = '▎',
+            style = 'icon',
+          },
+          buffer_close_icon = '',
+          modified_icon = '●',
+          close_icon = '',
+          left_trunc_marker = '',
+          right_trunc_marker = '',
+          diagnostics = 'nvim_lsp',
+          diagnostics_update_in_insert = false,
+          diagnostics_indicator = function(count, level, diagnostics_dict, context)
+            local icon = level:match 'error' and ' ' or ' '
+            return ' ' .. icon .. count
+          end,
+          offsets = {
+            {
+              filetype = 'neo-tree',
+              text = 'File Explorer',
+              text_align = 'left',
+              separator = true,
+            },
+          },
+          color_icons = true,
+          show_buffer_icons = true,
+          show_buffer_close_icons = true,
+          show_close_icon = true,
+          show_tab_indicators = true,
+          persist_buffer_sort = true,
+          separator_style = 'slant',
+          enforce_regular_tabs = false,
+          always_show_bufferline = true,
+          sort_by = 'insert_after_current',
+        },
+      }
+
+      -- Keymaps for buffer navigation
+      vim.keymap.set('n', '<S-h>', '<cmd>BufferLineCyclePrev<CR>', { desc = 'Previous buffer' })
+      vim.keymap.set('n', '<S-l>', '<cmd>BufferLineCycleNext<CR>', { desc = 'Next buffer' })
+      vim.keymap.set('n', '<leader>bp', '<cmd>BufferLineTogglePin<CR>', { desc = 'Pin buffer' })
+      vim.keymap.set('n', '<leader>bP', '<cmd>BufferLineGroupClose ungrouped<CR>', { desc = 'Delete non-pinned buffers' })
+      vim.keymap.set('n', '<leader>br', '<cmd>BufferLineCloseRight<CR>', { desc = 'Delete buffers to the right' })
+      vim.keymap.set('n', '<leader>bl', '<cmd>BufferLineCloseLeft<CR>', { desc = 'Delete buffers to the left' })
+    end,
+  },
+
+  -- =====================
+  -- MEDIUM PRIORITY PLUGINS
+  -- =====================
+
+  { -- Advanced Git UI with diff view
+    'sindrets/diffview.nvim',
+    dependencies = 'nvim-lua/plenary.nvim',
+    config = function()
+      require('diffview').setup {
+        diff_binaries = false,
+        enhanced_diff_hl = false,
+        git_cmd = { 'git' },
+        use_icons = true,
+        show_help_hints = true,
+        watch_index = true,
+        icons = {
+          folder_closed = '',
+          folder_open = '',
+        },
+        signs = {
+          fold_closed = '',
+          fold_open = '',
+          done = '✓',
+        },
+        view = {
+          default = {
+            layout = 'diff2_horizontal',
+            winbar_info = false,
+          },
+          merge_tool = {
+            layout = 'diff3_horizontal',
+            disable_diagnostics = true,
+            winbar_info = true,
+          },
+          file_history = {
+            layout = 'diff2_horizontal',
+            winbar_info = false,
+          },
+        },
+        file_panel = {
+          listing_style = 'tree',
+          tree_options = {
+            flatten_dirs = true,
+            folder_statuses = 'only_folded',
+          },
+          win_config = {
+            position = 'left',
+            width = 35,
+            win_opts = {},
+          },
+        },
+        file_history_panel = {
+          log_options = {
+            git = {
+              single_file = {
+                diff_merges = 'combined',
+              },
+              multi_file = {
+                diff_merges = 'first-parent',
+              },
+            },
+          },
+          win_config = {
+            position = 'bottom',
+            height = 16,
+            win_opts = {},
+          },
+        },
+        commit_log_panel = {
+          win_config = {
+            win_opts = {},
+          },
+        },
+        default_args = {
+          DiffviewOpen = {},
+          DiffviewFileHistory = {},
+        },
+        hooks = {},
+        keymaps = {
+          disable_defaults = false,
+          view = {
+            { 'n', '<tab>', require('diffview.actions').select_next_entry, { desc = 'Open the diff for the next file' } },
+            { 'n', '<s-tab>', require('diffview.actions').select_prev_entry, { desc = 'Open the diff for the previous file' } },
+            { 'n', 'gf', require('diffview.actions').goto_file, { desc = 'Open the file in a new split in the previous tabpage' } },
+            { 'n', '<C-w><C-f>', require('diffview.actions').goto_file_split, { desc = 'Open the file in a new split' } },
+            { 'n', '<C-w>gf', require('diffview.actions').goto_file_tab, { desc = 'Open the file in a new tabpage' } },
+            { 'n', '<leader>e', require('diffview.actions').focus_files, { desc = 'Bring focus to the file panel' } },
+            { 'n', '<leader>b', require('diffview.actions').toggle_files, { desc = 'Toggle the file panel.' } },
+            { 'n', 'g<C-x>', require('diffview.actions').cycle_layout, { desc = 'Cycle through available layouts.' } },
+            { 'n', '[x', require('diffview.actions').prev_conflict, { desc = 'In the merge-tool: jump to the previous conflict' } },
+            { 'n', ']x', require('diffview.actions').next_conflict, { desc = 'In the merge-tool: jump to the next conflict' } },
+            { 'n', '<leader>co', require('diffview.actions').conflict_choose 'ours', { desc = 'Choose the OURS version of a conflict' } },
+            { 'n', '<leader>ct', require('diffview.actions').conflict_choose 'theirs', { desc = 'Choose the THEIRS version of a conflict' } },
+            { 'n', '<leader>cb', require('diffview.actions').conflict_choose 'base', { desc = 'Choose the BASE version of a conflict' } },
+            { 'n', '<leader>ca', require('diffview.actions').conflict_choose 'all', { desc = 'Choose all the versions of a conflict' } },
+            { 'n', 'dx', require('diffview.actions').conflict_choose 'none', { desc = 'Delete the conflict region' } },
+          },
+          diff1 = {
+            { 'n', 'g?', require('diffview.actions').help { 'view', 'diff1' }, { desc = 'Open the help panel' } },
+          },
+          diff2 = {
+            { 'n', 'g?', require('diffview.actions').help { 'view', 'diff2' }, { desc = 'Open the help panel' } },
+          },
+          diff3 = {
+            { 'n', 'g?', require('diffview.actions').help { 'view', 'diff3' }, { desc = 'Open the help panel' } },
+          },
+          diff4 = {
+            { 'n', 'g?', require('diffview.actions').help { 'view', 'diff4' }, { desc = 'Open the help panel' } },
+          },
+          file_panel = {
+            { 'n', 'j', require('diffview.actions').next_entry, { desc = 'Bring the cursor to the next file entry' } },
+            { 'n', '<down>', require('diffview.actions').next_entry, { desc = 'Bring the cursor to the next file entry' } },
+            { 'n', 'k', require('diffview.actions').prev_entry, { desc = 'Bring the cursor to the previous file entry.' } },
+            { 'n', '<up>', require('diffview.actions').prev_entry, { desc = 'Bring the cursor to the previous file entry.' } },
+            { 'n', '<cr>', require('diffview.actions').select_entry, { desc = 'Open the diff for the selected entry.' } },
+            { 'n', 'o', require('diffview.actions').select_entry, { desc = 'Open the diff for the selected entry.' } },
+            { 'n', '<2-LeftMouse>', require('diffview.actions').select_entry, { desc = 'Open the diff for the selected entry.' } },
+            { 'n', '-', require('diffview.actions').toggle_stage_entry, { desc = 'Stage / unstage the selected entry.' } },
+            { 'n', 'S', require('diffview.actions').stage_all, { desc = 'Stage all entries.' } },
+            { 'n', 'U', require('diffview.actions').unstage_all, { desc = 'Unstage all entries.' } },
+            { 'n', 'X', require('diffview.actions').restore_entry, { desc = 'Restore entry to the state on the left side.' } },
+            { 'n', 'L', require('diffview.actions').open_commit_log, { desc = 'Open the commit log panel.' } },
+            { 'n', '<c-b>', require('diffview.actions').scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            { 'n', '<c-f>', require('diffview.actions').scroll_view(0.25), { desc = 'Scroll the view down' } },
+            { 'n', '<tab>', require('diffview.actions').select_next_entry, { desc = 'Open the diff for the next file' } },
+            { 'n', '<s-tab>', require('diffview.actions').select_prev_entry, { desc = 'Open the diff for the previous file' } },
+            { 'n', 'gf', require('diffview.actions').goto_file, { desc = 'Open the file in a new split in the previous tabpage' } },
+            { 'n', '<C-w><C-f>', require('diffview.actions').goto_file_split, { desc = 'Open the file in a new split' } },
+            { 'n', '<C-w>gf', require('diffview.actions').goto_file_tab, { desc = 'Open the file in a new tabpage' } },
+            { 'n', 'i', require('diffview.actions').listing_style, { desc = 'Toggle between list and tree style file list.' } },
+            { 'n', 'f', require('diffview.actions').toggle_flatten_dirs, { desc = 'Flatten empty subdirectories in tree listing style.' } },
+            { 'n', 'R', require('diffview.actions').refresh_files, { desc = 'Update stats and entries in the file list.' } },
+            { 'n', '<leader>e', require('diffview.actions').focus_files, { desc = 'Bring focus to the file panel' } },
+            { 'n', '<leader>b', require('diffview.actions').toggle_files, { desc = 'Toggle the file panel' } },
+            { 'n', 'g<C-x>', require('diffview.actions').cycle_layout, { desc = 'Cycle through available layouts.' } },
+            { 'n', '[x', require('diffview.actions').prev_conflict, { desc = 'In the merge-tool: jump to the previous conflict' } },
+            { 'n', ']x', require('diffview.actions').next_conflict, { desc = 'In the merge-tool: jump to the next conflict' } },
+            { 'n', 'g?', require('diffview.actions').help 'file_panel', { desc = 'Open the help panel' } },
+          },
+          file_history_panel = {
+            { 'n', 'g!', require('diffview.actions').options, { desc = 'Open the option panel' } },
+            { 'n', '<C-A-d>', require('diffview.actions').open_in_diffview, { desc = 'Open the entry under the cursor in a diffview' } },
+            { 'n', 'y', require('diffview.actions').copy_hash, { desc = 'Copy the commit hash of the entry under the cursor' } },
+            { 'n', 'L', require('diffview.actions').open_commit_log, { desc = 'Show commit details' } },
+            { 'n', 'zR', require('diffview.actions').open_all_folds, { desc = 'Expand all folds' } },
+            { 'n', 'zM', require('diffview.actions').close_all_folds, { desc = 'Collapse all folds' } },
+            { 'n', 'j', require('diffview.actions').next_entry, { desc = 'Bring the cursor to the next file entry' } },
+            { 'n', '<down>', require('diffview.actions').next_entry, { desc = 'Bring the cursor to the next file entry' } },
+            { 'n', 'k', require('diffview.actions').prev_entry, { desc = 'Bring the cursor to the previous file entry.' } },
+            { 'n', '<up>', require('diffview.actions').prev_entry, { desc = 'Bring the cursor to the previous file entry.' } },
+            { 'n', '<cr>', require('diffview.actions').select_entry, { desc = 'Open the diff for the selected entry.' } },
+            { 'n', 'o', require('diffview.actions').select_entry, { desc = 'Open the diff for the selected entry.' } },
+            { 'n', '<2-LeftMouse>', require('diffview.actions').select_entry, { desc = 'Open the diff for the selected entry.' } },
+            { 'n', '<c-b>', require('diffview.actions').scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            { 'n', '<c-f>', require('diffview.actions').scroll_view(0.25), { desc = 'Scroll the view down' } },
+            { 'n', '<tab>', require('diffview.actions').select_next_entry, { desc = 'Open the diff for the next file' } },
+            { 'n', '<s-tab>', require('diffview.actions').select_prev_entry, { desc = 'Open the diff for the previous file' } },
+            { 'n', 'gf', require('diffview.actions').goto_file, { desc = 'Open the file in a new split in the previous tabpage' } },
+            { 'n', '<C-w><C-f>', require('diffview.actions').goto_file_split, { desc = 'Open the file in a new split' } },
+            { 'n', '<C-w>gf', require('diffview.actions').goto_file_tab, { desc = 'Open the file in a new tabpage' } },
+            { 'n', '<leader>e', require('diffview.actions').focus_files, { desc = 'Bring focus to the file panel' } },
+            { 'n', '<leader>b', require('diffview.actions').toggle_files, { desc = 'Toggle the file panel' } },
+            { 'n', 'g<C-x>', require('diffview.actions').cycle_layout, { desc = 'Cycle through available layouts.' } },
+            { 'n', 'g?', require('diffview.actions').help 'file_history_panel', { desc = 'Open the help panel' } },
+          },
+          option_panel = {
+            { 'n', '<tab>', require('diffview.actions').select_entry, { desc = 'Change the current option' } },
+            { 'n', 'q', require('diffview.actions').close, { desc = 'Close the diffview' } },
+            { 'n', '<esc>', require('diffview.actions').close, { desc = 'Close the diffview' } },
+            { 'n', 'g?', require('diffview.actions').help 'option_panel', { desc = 'Open the help panel' } },
+          },
+          help_panel = {
+            { 'n', 'q', require('diffview.actions').close, { desc = 'Close help menu' } },
+            { 'n', '<esc>', require('diffview.actions').close, { desc = 'Close help menu' } },
+          },
+        },
+      }
+
+      -- Keymaps for diffview
+      vim.keymap.set('n', '<leader>gd', '<cmd>DiffviewOpen<CR>', { desc = 'Git diff view' })
+      vim.keymap.set('n', '<leader>gh', '<cmd>DiffviewFileHistory<CR>', { desc = 'Git file history' })
+      vim.keymap.set('n', '<leader>gc', '<cmd>DiffviewClose<CR>', { desc = 'Close diffview' })
+    end,
+  },
+
+  { -- Better commenting with context awareness
+    'numToStr/Comment.nvim',
+    dependencies = {
+      'JoosepAlviste/nvim-ts-context-commentstring',
+    },
+    config = function()
+      -- Enable comment string highlighting
+      require('ts_context_commentstring').setup {
+        enable_autocmd = false,
+      }
+
+      require('Comment').setup {
+        -- Add a space b/w comment and the line
+        padding = true,
+        -- Whether the cursor should stay at its position
+        sticky = true,
+        -- Lines to be ignored while (un)comment
+        ignore = nil,
+        -- LHS of toggle mappings in NORMAL mode
+        toggler = {
+          line = 'gcc',
+          block = 'gbc',
+        },
+        -- LHS of operator-pending mappings in NORMAL and VISUAL mode
+        opleader = {
+          line = 'gc',
+          block = 'gb',
+        },
+        -- LHS of extra mappings
+        extra = {
+          above = 'gcO',
+          below = 'gco',
+          eol = 'gcA',
+        },
+        -- Enable keybindings
+        mappings = {
+          basic = true,
+          extra = true,
+        },
+        -- Function to call before (un)comment
+        pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook(),
+        -- Function to call after (un)comment
+        post_hook = nil,
+      }
+    end,
+  },
+
+  { -- Symbol outline for code navigation
+    'hedyhli/outline.nvim',
+    config = function()
+      require('outline').setup {
+        outline_window = {
+          position = 'right',
+          width = 25,
+          relative_width = true,
+          auto_close = false,
+          auto_jump = false,
+          jump_highlight_duration = 300,
+          center_on_jump = true,
+          show_numbers = false,
+          show_relative_numbers = false,
+          wrap = false,
+          show_cursorline = true,
+          hide_cursor = false,
+          focus_on_open = true,
+          winhl = '',
+        },
+        outline_items = {
+          show_symbol_details = true,
+          show_symbol_lineno = false,
+          highlight_hovered_item = true,
+          auto_set_cursor = true,
+        },
+        guides = {
+          enabled = true,
+          markers = {
+            bottom = '└',
+            middle = '├',
+            vertical = '│',
+          },
+        },
+        symbol_folding = {
+          autofold_depth = 1,
+          auto_unfold_hover = true,
+          markers = { '', '' },
+        },
+        preview_window = {
+          auto_preview = false,
+          open_hover_on_preview = false,
+          width = 50,
+          min_width = 50,
+          height = 10,
+          min_height = 5,
+          border = 'single',
+          winhl = 'NormalFloat:',
+          live = false,
+        },
+        keymaps = {
+          show_help = '?',
+          close = { '<Esc>', 'q' },
+          goto_location = '<Cr>',
+          peek_location = 'o',
+          goto_and_close = '<S-Cr>',
+          restore_location = '<C-g>',
+          hover_symbol = '<C-space>',
+          toggle_preview = 'K',
+          rename_symbol = 'r',
+          code_actions = 'a',
+          fold = 'h',
+          unfold = 'l',
+          fold_toggle = '<Tab>',
+          fold_toggle_all = '<S-Tab>',
+          fold_all = 'W',
+          unfold_all = 'E',
+          fold_reset = 'R',
+          down_and_jump = '<C-j>',
+          up_and_jump = '<C-k>',
+        },
+        providers = {
+          priority = { 'lsp', 'coc', 'markdown', 'norg' },
+          lsp = {
+            blacklist_clients = {},
+          },
+        },
+        symbols = {
+          icons = {
+            File = { icon = '󰈙', hl = 'Identifier' },
+            Module = { icon = '󰆧', hl = 'Include' },
+            Namespace = { icon = '󰅪', hl = 'Include' },
+            Package = { icon = '󰏗', hl = 'Include' },
+            Class = { icon = '𝓒', hl = 'Type' },
+            Method = { icon = 'ƒ', hl = 'Function' },
+            Property = { icon = '', hl = 'Identifier' },
+            Field = { icon = '󰆨', hl = 'Identifier' },
+            Constructor = { icon = '', hl = 'Special' },
+            Enum = { icon = 'ℰ', hl = 'Type' },
+            Interface = { icon = '󰜰', hl = 'Type' },
+            Function = { icon = '', hl = 'Function' },
+            Variable = { icon = '', hl = 'Constant' },
+            Constant = { icon = '', hl = 'Constant' },
+            String = { icon = '𝓐', hl = 'String' },
+            Number = { icon = '#', hl = 'Number' },
+            Boolean = { icon = '⊨', hl = 'Boolean' },
+            Array = { icon = '󰅪', hl = 'Constant' },
+            Object = { icon = '⦿', hl = 'Type' },
+            Key = { icon = '🔐', hl = 'Type' },
+            Null = { icon = 'NULL', hl = 'Type' },
+            EnumMember = { icon = '', hl = 'Identifier' },
+            Struct = { icon = '𝓢', hl = 'Structure' },
+            Event = { icon = '🗲', hl = 'Type' },
+            Operator = { icon = '+', hl = 'Identifier' },
+            TypeParameter = { icon = '𝙏', hl = 'Identifier' },
+            Component = { icon = '󰅴', hl = 'Function' },
+            Fragment = { icon = '󰅴', hl = 'Constant' },
+          },
+        },
+      }
+
+      -- Keymap for outline
+      vim.keymap.set('n', '<leader>o', '<cmd>Outline<CR>', { desc = 'Toggle outline' })
+    end,
+  },
+
+  { -- Smooth scrolling
+    'karb94/neoscroll.nvim',
+    config = function()
+      require('neoscroll').setup {
+        -- All these keys will be mapped to their corresponding default scrolling animation
+        mappings = { '<C-u>', '<C-d>', '<C-b>', '<C-f>', '<C-y>', '<C-e>', 'zt', 'zz', 'zb' },
+        hide_cursor = true, -- Hide cursor while scrolling
+        stop_eof = true, -- Stop at <EOF> when scrolling downwards
+        respect_scrolloff = false, -- Stop scrolling when the cursor reaches the scrolloff margin of the file
+        cursor_scrolls_alone = true, -- The cursor will keep on scrolling even if the window cannot scroll further
+        easing_function = nil, -- Default easing function
+        pre_hook = nil, -- Function to run before the scrolling animation starts
+        post_hook = nil, -- Function to run after the scrolling animation ends
+        performance_mode = false, -- Disable "Performance Mode" on all buffers.
+      }
+    end,
+  },
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
