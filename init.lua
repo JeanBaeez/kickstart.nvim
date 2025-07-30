@@ -122,7 +122,7 @@ end)
 vim.o.breakindent = true
 
 -- Save undo history
-  vim.o.undofile = true
+vim.o.undofile = true
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 vim.o.ignorecase = true
@@ -623,7 +623,7 @@ require('lazy').setup({
             if client.name == 'rust_analyzer' then
               vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
             end
-            
+
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
@@ -710,10 +710,10 @@ require('lazy').setup({
                   minLines = 25,
                 },
                 closureReturnTypeHints = {
-                  enable = "never",
+                  enable = 'never',
                 },
                 lifetimeElisionHints = {
-                  enable = "never",
+                  enable = 'never',
                   useParameterNames = false,
                 },
                 maxLength = 25,
@@ -721,7 +721,7 @@ require('lazy').setup({
                   enable = true,
                 },
                 reborrowHints = {
-                  enable = "never",
+                  enable = 'never',
                 },
                 renderColons = true,
                 typeHints = {
@@ -734,7 +734,7 @@ require('lazy').setup({
                 enable = true,
               },
               checkOnSave = {
-                command = "clippy",
+                command = 'clippy',
               },
             },
           },
@@ -854,6 +854,27 @@ require('lazy').setup({
     event = 'VimEnter',
     version = '1.*',
     dependencies = {
+      -- Supermaven AI completion
+      {
+        'supermaven-inc/supermaven-nvim',
+        opts = {
+          keymaps = {
+            accept_suggestion = '<Tab>',
+            clear_suggestion = '<C-]>',
+            accept_word = '<C-j>',
+          },
+          ignore_filetypes = {},
+          color = {
+            suggestion_color = '#ffffff',
+            cterm = 244,
+          },
+          log_level = 'info',
+          disable_inline_completion = false, -- Enable for inline suggestions
+          disable_keymaps = false,
+        },
+      },
+      -- Supermaven integration for blink.cmp
+      'huijiro/blink-cmp-supermaven',
       -- Snippet Engine
       {
         'L3MON4D3/LuaSnip',
@@ -927,9 +948,15 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'supermaven', 'lazydev' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+          supermaven = {
+            name = 'supermaven',
+            module = 'blink-cmp-supermaven',
+            async = true,
+            score_offset = 50, -- Higher priority than buffer, lower than LSP
+          },
         },
       },
 
@@ -1017,7 +1044,27 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'rust', 'toml', 'json', 'yaml', 'go', 'python', 'javascript', 'typescript' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'rust',
+        'toml',
+        'json',
+        'yaml',
+        'go',
+        'python',
+        'javascript',
+        'typescript',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1046,11 +1093,11 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -1086,4 +1133,4 @@ require('lazy').setup({
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
+-
